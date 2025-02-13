@@ -21,34 +21,39 @@ Here are some features:
 - Native chat templating
 
 
- 
-| Pre Converted Models                                                                                                                                      | Compressed Weights |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| [Echo9Zulu/Ministral-3b-instruct-int4_asym-ov](https://huggingface.co/Echo9Zulu/Ministral-3b-instruct-int4_asym-ov)                                   | 1.85 GB            |
-| [Echo9Zulu/Llama-3.1-Tulu-3-8B-int4_asym-ov](https://huggingface.co/Echo9Zulu/Llama-3.1-Tulu-3-8B-int4_asym-ov/tree/main)                             | 4.68 GB            |
-| [Echo9Zulu/Falcon3-10B-Instruct-int4_asym-ov](https://huggingface.co/Echo9Zulu/Falcon3-10B-Instruct-int4_asym-ov)                                     | 5.74 GB            |
-| [Echo9Zulu/DeepSeek-R1-Distill-Qwen-14B-int4-awq-ov](https://huggingface.co/Echo9Zulu/DeepSeek-R1-Distill-Qwen-14B-int4-awq-ov/tree/main)             | 7.68 GB            |
-| [Echo9Zulu/Phi-4-o1-int4_asym-awq-weight_quantization_error-ov](https://huggingface.co/Echo9Zulu/Phi-4-o1-int4_asym-awq-weight_quantization_error-ov) | 8.11 GB            |
-| [Echo9Zulu/Qwen2.5-72B-Instruct-int4-ns-ov](https://huggingface.co/Echo9Zulu/Qwen2.5-72B-Instruct-int4-ns-ov/tree/main))                              | 39 GB              |
+## Converted Models
 
-I have 40+ preconverted text generation models of larger variety that what's offered by the official repos for OpenVINO on my [HuggingFace](https://huggingface.co/Echo9Zulu).
+Find over 40+ preconverted text generation models of larger variety that what's offered by the official repos for OpenVINO on my [HuggingFace](https://huggingface.co/Echo9Zulu).
 
 You can easily craft conversion commands using my HF Space, [Optimum-CLI-Tool_tool](https://huggingface.co/spaces/Echo9Zulu/Optimum-CLI-Tool_tool)!
 
+ 
+| Models                                                                                                                                      | Compressed Weights |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| [Ministral-3b-instruct-int4_asym-ov](https://huggingface.co/Echo9Zulu/Ministral-3b-instruct-int4_asym-ov)                                   | 1.85 GB            |
+| [Hermes-3-Llama-3.2-3B-awq-ov](https://huggingface.co/Echo9Zulu/Hermes-3-Llama-3.2-3B-awq-ov)							| 1.8 GB |
+[Llama-3.1-Tulu-3-8B-int4_asym-ov](https://huggingface.co/Echo9Zulu/Llama-3.1-Tulu-3-8B-int4_asym-ov/tree/main)                             | 4.68 GB            |
+| [Falcon3-10B-Instruct-int4_asym-ov](https://huggingface.co/Echo9Zulu/Falcon3-10B-Instruct-int4_asym-ov)                                     | 5.74 GB            |
+| [DeepSeek-R1-Distill-Qwen-14B-int4-awq-ov](https://huggingface.co/Echo9Zulu/DeepSeek-R1-Distill-Qwen-14B-int4-awq-ov/tree/main)             | 7.68 GB            |
+| [Phi-4-o1-int4_asym-awq-weight_quantization_error-ov](https://huggingface.co/Echo9Zulu/Phi-4-o1-int4_asym-awq-weight_quantization_error-ov) | 8.11 GB            |
+| [Mistral-Small-24B-Instruct-2501-int4_asym-ov](https://huggingface.co/Echo9Zulu/Mistral-Small-24B-Instruct-2501-int4_asym-ov)		| 12.9 GB	     |	
+| [Qwen2.5-72B-Instruct-int4-ns-ov](https://huggingface.co/Echo9Zulu/Qwen2.5-72B-Instruct-int4-ns-ov/tree/main))                              | 39 GB              |
+
+
 Learn more about model conversion and working with Intel Devices generally in the openvino_utilities notebook.
 
-### Roadmap
 
-Currently my plan is to transition from Optimum to OpenVINO GenAI since it handles everything here and much more, while being faster AND easier to install. Constantly rebuilding from source definetely doesn't brick
 
-Planned Features
+## Roadmap
 
-- Performance benchmarks
-- Speculative decoding
-- Better state management
-- Lower level control of kv cache
-- Speed from being one python layer above c++
-- Multi-GPU
+Currently my plan is to transition from Optimum to OpenVINO GenAI since it handles everything here and much more, while being faster AND easier to install. 
+
+
+
+## Resources
+---
+to learn more about how to leverage your Intel devices for Machine Learning:
+
 
 
 
