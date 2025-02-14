@@ -20,6 +20,27 @@ Here are some features:
 - Each endpoint has a pydantic model keeping exposed parameters easy to maintain or extend.
 - Native chat templating
 
+## Usage
+
+OpenArc offers a lightweight approach to decoupling machine learning code from application logic by adding an API layer to serve LLMs using hardware acceleration for Intel devices; in practice OpenArc offers a similar workflow to what's possible with Ollama, LM-Studio or OpenRouter. 
+
+
+OpenArc emphasizes application level control over the context window. Exposing the conversation parameter from Transformers apply_chat_template method grant's complete control over what get's passed in and out of the model without any intervention required at the template level for text. I have not added the other parameters since I am interested in defining tool calls in other ways, potentially outside of the chat temple, such as the design philosophy of CodeAgent from smolagents where LLMs define their own tooling dynamically.
+
+
+Since I started working with OpenVINO every implementation worth tinkering with has come from ad hoc experimentation; for example, no other projects support multi gpu natively; once I learned this I did not bother with any other projects. Moreover, the excellent openvino-notebooks repo maintains pace with SOTA. Back when Qwen2-VL came out the released notebook helped me implement a class barely a week after the model released which was not 
+
+
+
+
+
+Use parameters defined in the [Pydanitc models here](https://github.com/SearchSavior/OpenArc/blob/main/src/engine/optimum_inference_core.py) to build a frontend and construct a request body based on inputs. You can even dump the pydantic models into a prompt and get strong boilerplate for your usecase since each BaseModel directly defines each type of request type. 
+
+
+
+
+In practice 
+
 
 ## Converted Models
 
