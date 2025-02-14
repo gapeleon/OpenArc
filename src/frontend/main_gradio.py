@@ -5,12 +5,9 @@ import gradio as gr
 # URL of the FastAPI endpoint
 API_URL = "http://localhost:8000/generate/text"
 
-def send_chat(user_message, chat_history, conversation_state, config, last_assistant):
+def send_chat(user_message, chat_history, conversation_state, config):
     """
-    Send the new user message along with the conversation and config to the API.
-    The API returns a full conversation context in its last assistant message.
-    To avoid appending the whole context to the chat display, we compare the new
-    assistant reply with the previously displayed one and extract only the new portion.
+    Process the user's message, call the API, and update states.
     """
     if conversation_state is None:
         conversation_state = []
@@ -34,44 +31,23 @@ def send_chat(user_message, chat_history, conversation_state, config, last_assis
         "eos_token_id": config.get("eos_token_id", 2),
     }
     
-    try:
-        response = requests.post(API_URL, json=payload)
-        response.raise_for_status()
-        response_json = response.json()
-        
-        # Assume the API returns a "conversation" field with a list of messages.
-        if "conversation" in response_json:
-            full_assistant_message = response_json["conversation"][-1]["content"]
-            # If we already have a previous assistant message and the new one starts with it,
-            # then extract only the new part.
-            if last_assistant and full_assistant_message.startswith(last_assistant):
-                new_assistant_message = full_assistant_message[len(last_assistant):].strip()
-            else:
-                new_assistant_message = full_assistant_message
-            # Update the conversation state with the API's returned conversation.
-            conversation_state = response_json["conversation"]
-        elif "generated_text" in response_json:
-            # If the API returns a single generated text.
-            full_assistant_message = response_json["generated_text"]
-            if last_assistant and full_assistant_message.startswith(last_assistant):
-                new_assistant_message = full_assistant_message[len(last_assistant):].strip()
-            else:
-                new_assistant_message = full_assistant_message
-            conversation_state.append({"role": "assistant", "content": full_assistant_message})
-        else:
-            new_assistant_message = "Error: Unexpected response format."
-            conversation_state.append({"role": "assistant", "content": new_assistant_message})
-    except Exception as e:
-        new_assistant_message = f"Error: {str(e)}"
-        conversation_state.append({"role": "assistant", "content": new_assistant_message})
+    # TODO: Replace the placeholder with an actual API call
+    # For example:
+    # response = requests.post(API_URL, json=payload)
+    # result = response.json()
+    # assistant_message = result.get("response", "")
+    #
+    # For now, we'll use a placeholder for the assistant response.
+    assistant_message = "Assistant response"
     
-    # Append only the new (user, assistant) pair to the chat history.
-    chat_history.append((user_message, new_assistant_message))
+    # Append the assistant response to the conversation payload.
+    conversation_state.append({"role": "assistant", "content": assistant_message})
     
-    # Update the last assistant state to the full assistant reply (for future diffing).
-    last_assistant = full_assistant_message if 'full_assistant_message' in locals() else last_assistant
+    # Update chat history for the chatbot display (a list of (user, assistant) pairs).
+    chat_history.append((user_message, assistant_message))
     
-    return chat_history, chat_history, conversation_state, last_assistant
+    # Return updated outputs:
+    return chat_history, chat_history, conversation_state
 
 # --- Configuration update functions (each field has its own input and button) ---
 def update_max_new_tokens(value, config):
@@ -231,8 +207,8 @@ with gr.Blocks() as demo:
     # --- Wire up the Send button ---
     send_button.click(
         fn=send_chat,
-        inputs=[user_message, chat_history_state, conversation_state, config_state, last_assistant_state],
-        outputs=[chatbot, chat_history_state, conversation_state, last_assistant_state],
+        inputs=[user_message, chat_history_state, conversation_state, config_state],
+        outputs=[chatbot, chat_history_state, conversation_state],
         queue=True,
     )
     
