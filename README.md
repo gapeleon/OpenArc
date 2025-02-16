@@ -80,14 +80,13 @@ Learn more about model conversion and working with Intel Devices generally in th
 
 NOTE: The optimum CLI tool integrates several different APIs from several different Intel projects; it is a better alternative than using APIs in the from_pretrained() methods. Also, it references prebuilt configurations for each supported model architecture meaning that **not all models are natively supported** but most are. If you use the CLI tool and get an error about an unsupported architecture follow the link, open an issue with references to the model card and the maintainers will get back to you.  
 
-
 ## Known Issues
 
 - Right now the /generate/text endpoint can return the whole conversation dict. 
 
 ## Roadmap
 
-- Define a pyprojectoml or maybe use uv. 
+- Define a pyprojectoml o
 - More documentation about how to use the various openvino parameters like ENABLE_HYPERTHREADING and INFERENCE_NUM_THREADS for CPU only which are not included in this release yet.
 
 
