@@ -26,10 +26,7 @@ class OV_LoadModelConfig(BaseModel):
     export_model: bool = Field(False, description="Whether to export the model")
 
 class OV_GenerationConfig(BaseModel):
-    conversation: Union[List[Dict[str, str]], List[List[Dict[str, str]]]] = Field(
-        ...,
-        description="A list of dicts with 'role' and 'content' keys, representing the chat history so far"
-    )
+    conversation: Union[List[Dict[str, str]], List[List[Dict[str, str]]]] = Field(description="A list of dicts with 'role' and 'content' keys, representing the chat history so far")
     # Inference parameters for generation
     max_new_tokens: int = Field(128, description="Maximum number of tokens to generate")
     temperature: float = Field(1.0, description="Sampling temperature")
@@ -128,8 +125,9 @@ class Optimum_PerformanceMetrics:
 
 class Optimum_InferenceCore:
     """
-    A simplified inference core that loads an OpenVINO model and tokenizer,
-    applies a chat template to conversation messages, and generates a response.
+    Loads an OpenVINO model and tokenizer,
+    Applies a chat template to conversation messages, and generates a response.
+    Exposed to the /generate endpoints.
     """
     def __init__(self, load_model_config, ov_config=None):
         """
@@ -148,7 +146,10 @@ class Optimum_InferenceCore:
     def load_model(self):
         """Load the tokenizer and model."""
         print(f"Loading model {self.load_model_config.id_model} on device {self.load_model_config.device}...")
-        # If an ov_config is provided, extract its configuration as a dict
+
+        # Extract its configuration as a dict. This matches that the Python CPP api expects. 
+        # Enables changing ov_config values on the fly since the cpp runtime has been configured to accept high level "performance hints"
+        # gets updated more often and the Transformers integration has been built to act as a pass-through layer.
         ov_config_dict = self.ov_config.model_dump(exclude_unset=True) if self.ov_config else {}
         
         
@@ -164,7 +165,7 @@ class Optimum_InferenceCore:
         self.tokenizer = AutoTokenizer.from_pretrained(self.load_model_config.id_model)
         print("Tokenizer loaded successfully.")
 
-    async def generate_stream(self, generation_config: OV_GenerationConfig) -> AsyncIterator[str]:
+    async def generate_stream(self, generation_config: OV_GenerationConfig) -> AsyncIterator[str]: # TODO: Something here breaks the chat template but still does streaming
         """
         Asynchronously stream generated text tokens.
         
