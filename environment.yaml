@@ -1,0 +1,16 @@
+name: OpenArc
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+    - transformers==4.48.3
+    - optimum
+    - optimum[openvino]
+    - openvino==2025.0.0.0
+    - openvino-tokenizers==2025.0.0.0
+    - fastapi
+    - pydantic
+    - uvicorn
