@@ -28,7 +28,9 @@ Exposing the _conversation_ parameter from [apply_chat_template](https://hugging
 
 Use parameters defined in the [Pydanitc models here](https://github.com/SearchSavior/OpenArc/blob/main/src/engine/optimum_inference_core.py) to build a frontend and construct a request body based on inputs from buttons. You can even dump the pydantic models into a prompt and get strong boilerplate for your usecase since each BaseModel directly defines each request type. 
 
-As the AI space moves forward we are seeing all sorts of different paradigms emerge in CoT, agents, etc. From the engineering side of developing systems from a low level, the _conversation_ object seems to be unchanging across both the literature and open source projects. For example, the Deepseek series achieve CoT inside of the same role-based input sequence labels and nearly all training data follows this format. For this reason only _conversation_ has been exposed. 
+As the AI space moves forward we are seeing all sorts of different paradigms emerge in CoT, agents, etc. From the engineering side of developing systems from a low level, the _conversation_ object seems to be unchanging across both the literature and open source projects. For example, the Deepseek series achieve CoT inside of the same role-based input sequence labels and nearly all training data follows this format. 
+
+For this reason only _conversation_ has been exposed but more options are easy to add.
 
 Notice the typing; if your custom model uses something other than system, user and asssistant roles at inference time you must match the typing to use OpenArc- and that's it!
 
