@@ -34,7 +34,7 @@ Notice the typing; if your custom model uses something other than system, user a
 
 ## Install
 
-A more detailed .toml will be pushed soon. I am considering using uv. For now use the provided conda .yaml file;
+A proper .toml will be pushed soon. For now use the provided conda .yaml file;
 
 Make it executable
 
@@ -47,14 +47,10 @@ Then create the conda environment
 
 ## Workflow
 
-
-Start in this notebook.
-
 - Either download or convert an LLM
 - Use the /model/load endpoint
 - Use the /generate/text endpoint for inference
 - Manage the conversation dictionary in code somewhere else. 
-
 
 ### Convert to [OpenVINO IR](https://docs.openvino.ai/2025/documentation/openvino-ir-format.html)
 
@@ -65,11 +61,11 @@ You can easily craft conversion commands using my HF Space, [Optimum-CLI-Tool_to
 This tool respects the positional arguments defined [here](https://huggingface.co/docs/optimum/main/en/intel/openvino/export) and is meant to be used locally in your OpenArc environment.
 
  
-| Models                                                                                                                                      | Compressed Weights | GPU | CPU |
+| Models                                                                                                                                      | Compressed Weights |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
 | [Ministral-3b-instruct-int4_asym-ov](https://huggingface.co/Echo9Zulu/Ministral-3b-instruct-int4_asym-ov)                                   | 1.85 GB            |
 | [Hermes-3-Llama-3.2-3B-awq-ov](https://huggingface.co/Echo9Zulu/Hermes-3-Llama-3.2-3B-awq-ov)							| 1.8 GB |
-[Llama-3.1-Tulu-3-8B-int4_asym-ov](https://huggingface.co/Echo9Zulu/Llama-3.1-Tulu-3-8B-int4_asym-ov/tree/main)                             | 4.68 GB            | 34.94 | 
+[Llama-3.1-Tulu-3-8B-int4_asym-ov](https://huggingface.co/Echo9Zulu/Llama-3.1-Tulu-3-8B-int4_asym-ov/tree/main)                             | 4.68 GB            |
 | [Falcon3-10B-Instruct-int4_asym-ov](https://huggingface.co/Echo9Zulu/Falcon3-10B-Instruct-int4_asym-ov)                                     | 5.74 GB            |
 | [DeepSeek-R1-Distill-Qwen-14B-int4-awq-ov](https://huggingface.co/Echo9Zulu/DeepSeek-R1-Distill-Qwen-14B-int4-awq-ov/tree/main)             | 7.68 GB            |
 | [Phi-4-o1-int4_asym-awq-weight_quantization_error-ov](https://huggingface.co/Echo9Zulu/Phi-4-o1-int4_asym-awq-weight_quantization_error-ov) | 8.11 GB            |
