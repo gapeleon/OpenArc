@@ -75,7 +75,7 @@ This tool respects the positional arguments defined [here](https://huggingface.c
 | [Qwen2.5-72B-Instruct-int4-ns-ov](https://huggingface.co/Echo9Zulu/Qwen2.5-72B-Instruct-int4-ns-ov/tree/main))                              | 39 GB              |
 
 Additionally, 
-Learn more about model conversion and working with Intel Devices generally in the [openvino_utilities](https://github.com/SearchSavior/OpenArc/blob/main/docs/openvino_utils.ipynb) notebook.
+Learn more about model conversion and working with Intel Devices in the [openvino_utilities](https://github.com/SearchSavior/OpenArc/blob/main/docs/openvino_utils.ipynb) notebook.
 
 
 NOTE: The optimum CLI tool integrates several different APIs from several different Intel projects; it is a better alternative than using APIs in the from_pretrained() methods. Also, it references prebuilt configurations for each supported model architecture meaning that **not all models are natively supported** but most are. If you use the CLI tool and get an error about an unsupported architecture follow the link, open an issue with references to the model card and the maintainers will get back to you.  
