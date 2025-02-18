@@ -262,11 +262,14 @@ class Optimum_InferenceCore:
                 eos_token_id=generation_config.eos_token_id,
             )
 
-            # Generate text
+            # Generate outpus from the model
             outputs = self.model.generate(**generation_kwargs)
             
+            # Extract new tokens by excluding the input tokens
+            new_tokens = outputs[0][input_ids.shape[1]:]
+            
             # Decode the generated tokens
-            generated_text = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+            generated_text = self.tokenizer.decode(new_tokens, skip_special_tokens=True)
             
             # Stop generation timer
             self.performance_metrics.stop_generation_timer()
