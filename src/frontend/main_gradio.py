@@ -1,263 +1,286 @@
-import json
-import requests
 import gradio as gr
+import requests
+import json
 
-# URL of the FastAPI endpoint
-API_URL = "http://localhost:8000/generate/text"
 
-def send_chat(user_message, chat_history, conversation_state, config):
-    """
-    Process the user's message, call the API, and update states.
-    """
-    if conversation_state is None:
-        conversation_state = []
-    if chat_history is None:
-        chat_history = []
-    
-    # Append the new user message to the conversation payload.
-    conversation_state.append({"role": "user", "content": user_message})
-    
-    # Build payload using the current configuration.
-    payload = {
-        "conversation": conversation_state,
-        "max_new_tokens": config.get("max_new_tokens", 128),
-        "temperature": config.get("temperature", 0.7),
-        "top_k": config.get("top_k", 50),
-        "top_p": config.get("top_p", 0.9),
-        "repetition_penalty": config.get("repetition_penalty", 1.0),
-        "do_sample": config.get("do_sample", True),
-        "num_return_sequences": config.get("num_return_sequences", 1),
-        "pad_token_id": config.get("pad_token_id", None),
-        "eos_token_id": config.get("eos_token_id", 2),
-    }
-    
-    # TODO: Replace the placeholder with an actual API call
-    # For example:
-    # response = requests.post(API_URL, json=payload)
-    # result = response.json()
-    # assistant_message = result.get("response", "")
-    #
-    # For now, we'll use a placeholder for the assistant response.
-    assistant_message = "Assistant response"
-    
-    # Append the assistant response to the conversation payload.
-    conversation_state.append({"role": "assistant", "content": assistant_message})
-    
-    # Update chat history for the chatbot display (a list of (user, assistant) pairs).
-    chat_history.append((user_message, assistant_message))
-    
-    # Return updated outputs:
-    return chat_history, chat_history, conversation_state
 
-# --- Configuration update functions (each field has its own input and button) ---
-def update_max_new_tokens(value, config):
-    config = config or {}
-    try:
-        config["max_new_tokens"] = int(value)
-        return config, f"max_new_tokens updated to {value}"
-    except Exception as e:
-        return config, f"Error: {str(e)}"
+OPENARC_URL = "http://localhost:8000"
 
-def update_temperature(value, config):
-    config = config or {}
-    try:
-        config["temperature"] = float(value)
-        return config, f"temperature updated to {value}"
-    except Exception as e:
-        return config, f"Error: {str(e)}"
+class Payload_Constructor:
+    def __init__(self):
+        self.generation_config = {}  # This will store actual values, not components
 
-def update_top_k(value, config):
-    config = config or {}
-    try:
-        config["top_k"] = int(value)
-        return config, f"top_k updated to {value}"
-    except Exception as e:
-        return config, f"Error: {str(e)}"
+    def load_model(self, id_model, device, use_cache, export_model, num_streams, performance_hint, precision_hint):
+        """
+        Constructs and sends the load model request based on UI inputs
+        
+        Args:
+            id_model (str): Model identifier or path
+            device (str): Device selection for inference
+            use_cache (bool): Whether to use cache
+            export_model (bool): Whether to export the model
+            num_streams (str): Number of inference streams
+            performance_hint (str): Performance optimization strategy
+            precision_hint (str): Model precision for computation
+        """
 
-def update_top_p(value, config):
-    config = config or {}
-    try:
-        config["top_p"] = float(value)
-        return config, f"top_p updated to {value}"
-    except Exception as e:
-        return config, f"Error: {str(e)}"
+        # Construct the payload matching the API format
+        payload = {
+            "load_config": {
+                "id_model": id_model,
+                "use_cache": use_cache,
+                "device": device,
+                "export_model": export_model
+            },
+            "ov_config": {
+                "NUM_STREAMS": num_streams,
+                "PERFORMANCE_HINT": performance_hint,
+      #         "PRECISION_HINT": precision_hint
+            }
+        }
 
-def update_repetition_penalty(value, config):
-    config = config or {}
-    try:
-        config["repetition_penalty"] = float(value)
-        return config, f"repetition_penalty updated to {value}"
-    except Exception as e:
-        return config, f"Error: {str(e)}"
+        # Clean up empty values
+        ov_config = payload["ov_config"]
+        ov_config = {k: v for k, v in ov_config.items() if v}
+        if not ov_config:
+            del payload["ov_config"]
+        
+        try:
+            response = requests.post(
+                f"{OPENARC_URL}/model/load",
+                headers={"Content-Type": "application/json"},
+                data=json.dumps(payload)
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"error": f"Request failed: {str(e)}"}
 
-def update_do_sample(value, config):
-    config = config or {}
-    try:
-        config["do_sample"] = bool(value)
-        return config, f"do_sample updated to {value}"
-    except Exception as e:
-        return config, f"Error: {str(e)}"
+    def unload_model(self):
+        """
+        Sends an unload model request to the API
+        """
+        try:
+            response = requests.delete(
+                f"{OPENARC_URL}/model/unload"
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"error": f"Request failed: {str(e)}"}
 
-def update_num_return_sequences(value, config):
-    config = config or {}
-    try:
-        config["num_return_sequences"] = int(value)
-        return config, f"num_return_sequences updated to {value}"
-    except Exception as e:
-        return config, f"Error: {str(e)}"
+    def generate_text(self, message, history):
+        """
+        Sends a text generation request to the API
+        
+        Args:
+            message (str): The current message from the user
+            history (list): List of previous message pairs
+        """
+        # Convert the chat history into the expected conversation format
+        conversation = []
+        
+        # Add history messages
+        for user_msg, assistant_msg in history:
+            conversation.extend([
+                {"role": "user", "content": user_msg},
+                {"role": "assistant", "content": assistant_msg}
+            ])
+        
+        # Add the current message
+        conversation.append({"role": "user", "content": message})
+        
+        # Construct payload with actual values from generation config
+        payload = {
+            "conversation": conversation,
+            **self.generation_config  # Spread the actual values
+        }
+        
+        # Remove None values from payload
+        payload = {k: v for k, v in payload.items() if v is not None}
+        
+        try:
+            response = requests.post(
+                f"{OPENARC_URL}/generate/text",
+                headers={"Content-Type": "application/json"},
+                data=json.dumps(payload)
+            )
+            response.raise_for_status()
+            return response.json().get('response', "Error: No response received")
+        except requests.exceptions.RequestException as e:
+            return f"Error: {str(e)}"
 
-def update_pad_token_id(value, config):
-    config = config or {}
-    try:
-        if value == "" or value.lower() == "none":
-            config["pad_token_id"] = None
-            out = "None"
-        else:
-            config["pad_token_id"] = int(value)
-            out = value
-        return config, f"pad_token_id updated to {out}"
-    except Exception as e:
-        return config, f"Error: {str(e)}"
+    def status(self):
+        """
+        Checks the server status
+        """
+        try:
+            response = requests.get(
+                f"{OPENARC_URL}/status"
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"error": f"Request failed: {str(e)}"}
 
-def update_eos_token_id(value, config):
-    config = config or {}
-    try:
-        config["eos_token_id"] = int(value)
-        return config, f"eos_token_id updated to {value}"
-    except Exception as e:
-        return config, f"Error: {str(e)}"
 
-# --- Default configuration ---
-default_config = {
-    "max_new_tokens": 128,
-    "temperature": 0.7,
-    "top_k": 50,
-    "top_p": 0.9,
-    "repetition_penalty": 1.0,
-    "do_sample": True,
-    "num_return_sequences": 1,
-    "pad_token_id": None,
-    "eos_token_id": 2,
-}
+class ChatUI:
+    def __init__(self):
+        self.demo = None
+        self.chat_interface = None
+        self.generation_config_components = {}  # Rename to clarify these are components
+        self.payload_constructor = Payload_Constructor()
+        self.setup_interface()
 
-# --- Build the Gradio Interface ---
-with gr.Blocks() as demo:
-    gr.Markdown("## Chat Interface with Generation Configuration")
-    
-    with gr.Row():
-        with gr.Column(scale=2):
-            # Chatbot shows conversation as a list of (user, assistant) pairs.
-            chatbot = gr.Chatbot(label="Chat History")
-            with gr.Row():
-                user_message = gr.Textbox(
-                    show_label=True,
-                    placeholder="Enter your message here",
-                    label="Your Message"
+    def setup_generation_config(self):
+        with gr.Accordion("**Generation Config**", open=False):
+            gr.Markdown("")
+            # Store the Gradio components
+            self.generation_config_components.update({
+                'max_new_tokens': gr.Slider(minimum=0, maximum=100, label="Maximum number of tokens to generate"),
+                'temperature': gr.Slider(minimum=0, maximum=100, label="Temperature"),
+                'top_k': gr.Slider(minimum=0, maximum=100, label="Top-k"),
+                'top_p': gr.Slider(minimum=0, maximum=100, label="Top-p"),
+                'repetition_penalty': gr.Slider(minimum=0, maximum=100, label="Repetition penalty"),
+                'do_sample': gr.Checkbox(label="Do sample"),
+                'num_return_sequences': gr.Slider(minimum=0, maximum=100, label="Number of sequences to return"),
+                'pad_token_id': gr.Slider(minimum=0, maximum=100, label="pad token ID"),
+                'eos_token_id': gr.Slider(minimum=0, maximum=100, label="eos token ID")
+            })
+            
+            # Set up event handlers to update the payload constructor when values change
+            for key, component in self.generation_config_components.items():
+                component.change(
+                    fn=lambda value, k=key: self.update_generation_config(k, value),
+                    inputs=[component]
                 )
-                send_button = gr.Button("Send")
-        with gr.Column(scale=1):
-            gr.Markdown("### Generation Configuration")
+
+    def update_generation_config(self, key, value):
+        """Update the generation config in the payload constructor with actual values"""
+        self.payload_constructor.generation_config[key] = value
+
+    def chat_tab(self):
+        with gr.Tab("Chat"):
             with gr.Row():
-                max_new_tokens_in = gr.Number(value=128, label="max_new_tokens")
-                max_new_tokens_btn = gr.Button("Set max_new_tokens")
-                max_new_tokens_status = gr.Textbox(label="Status", interactive=False)
-            with gr.Row():
-                temperature_in = gr.Slider(0.0, 2.0, value=0.7, step=0.01, label="temperature")
-                temperature_btn = gr.Button("Set temperature")
-                temperature_status = gr.Textbox(label="Status", interactive=False)
-            with gr.Row():
-                top_k_in = gr.Number(value=50, label="top_k")
-                top_k_btn = gr.Button("Set top_k")
-                top_k_status = gr.Textbox(label="Status", interactive=False)
-            with gr.Row():
-                top_p_in = gr.Slider(0.0, 1.0, value=0.9, step=0.01, label="top_p")
-                top_p_btn = gr.Button("Set top_p")
-                top_p_status = gr.Textbox(label="Status", interactive=False)
-            with gr.Row():
-                repetition_penalty_in = gr.Number(value=1.0, label="repetition_penalty")
-                repetition_penalty_btn = gr.Button("Set repetition_penalty")
-                repetition_penalty_status = gr.Textbox(label="Status", interactive=False)
-            with gr.Row():
-                do_sample_in = gr.Checkbox(value=True, label="do_sample")
-                do_sample_btn = gr.Button("Set do_sample")
-                do_sample_status = gr.Textbox(label="Status", interactive=False)
-            with gr.Row():
-                num_return_sequences_in = gr.Number(value=1, label="num_return_sequences")
-                num_return_sequences_btn = gr.Button("Set num_return_sequences")
-                num_return_sequences_status = gr.Textbox(label="Status", interactive=False)
-            with gr.Row():
-                pad_token_id_in = gr.Textbox(value="", label="pad_token_id (leave empty for None)")
-                pad_token_id_btn = gr.Button("Set pad_token_id")
-                pad_token_id_status = gr.Textbox(label="Status", interactive=False)
-            with gr.Row():
-                eos_token_id_in = gr.Number(value=2, label="eos_token_id")
-                eos_token_id_btn = gr.Button("Set eos_token_id")
-                eos_token_id_status = gr.Textbox(label="Status", interactive=False)
-    
-    # --- Hidden states ---
-    # chat_history_state: list of (user, assistant) pairs to display in the Chatbot widget.
-    # conversation_state: the full conversation (list of message dicts) sent to the API.
-    # config_state: holds the generation configuration.
-    # last_assistant_state: holds the last full assistant message (for diffing purposes).
-    chat_history_state = gr.State([])
-    conversation_state = gr.State([])
-    config_state = gr.State(default_config)
-    last_assistant_state = gr.State("")  # initially empty
-    
-    # --- Wire up the Send button ---
-    send_button.click(
-        fn=send_chat,
-        inputs=[user_message, chat_history_state, conversation_state, config_state],
-        outputs=[chatbot, chat_history_state, conversation_state],
-        queue=True,
-    )
-    
-    # --- Wire up configuration update buttons ---
-    max_new_tokens_btn.click(
-        fn=update_max_new_tokens,
-        inputs=[max_new_tokens_in, config_state],
-        outputs=[config_state, max_new_tokens_status]
-    )
-    temperature_btn.click(
-        fn=update_temperature,
-        inputs=[temperature_in, config_state],
-        outputs=[config_state, temperature_status]
-    )
-    top_k_btn.click(
-        fn=update_top_k,
-        inputs=[top_k_in, config_state],
-        outputs=[config_state, top_k_status]
-    )
-    top_p_btn.click(
-        fn=update_top_p,
-        inputs=[top_p_in, config_state],
-        outputs=[config_state, top_p_status]
-    )
-    repetition_penalty_btn.click(
-        fn=update_repetition_penalty,
-        inputs=[repetition_penalty_in, config_state],
-        outputs=[config_state, repetition_penalty_status]
-    )
-    do_sample_btn.click(
-        fn=update_do_sample,
-        inputs=[do_sample_in, config_state],
-        outputs=[config_state, do_sample_status]
-    )
-    num_return_sequences_btn.click(
-        fn=update_num_return_sequences,
-        inputs=[num_return_sequences_in, config_state],
-        outputs=[config_state, num_return_sequences_status]
-    )
-    pad_token_id_btn.click(
-        fn=update_pad_token_id,
-        inputs=[pad_token_id_in, config_state],
-        outputs=[config_state, pad_token_id_status]
-    )
-    eos_token_id_btn.click(
-        fn=update_eos_token_id,
-        inputs=[eos_token_id_in, config_state],
-        outputs=[config_state, eos_token_id_status]
-    )
+                # Chat interface on the left
+                with gr.Column(scale=3):
+                    self.chat_interface = gr.ChatInterface(
+                        fn=self.payload_constructor.generate_text,
+                        type="messages",
+                    )
+                
+                # Accordions on the right
+                with gr.Column(scale=1):
+                    self.setup_generation_config()
+                    
+                    with gr.Accordion("Accordion 2", open=False):
+                        gr.Markdown("This is the content of Accordion 2.")
+                        slider2 = gr.Slider(minimum=0, maximum=100, label="Slider 2")
+
+    def openarc_loader(self):
+        with gr.Tab("OpenArc Loader"):
+            # Center the content with controlled width
+            with gr.Column(min_width=600):
+                gr.Markdown("""
+                ### Model Configuration
+                Configure basic model loading parameters
+                """)
+                
+                # Text input for model identifier
+                id_model = gr.Textbox(
+                    label="Model Identifier or Path",
+                    placeholder="Enter model identifier or local path",
+                    info="Enter the model's Hugging Face identifier or local path"
+                )
+                
+                # Device selection dropdown
+                device = gr.Dropdown(
+                    choices=["AUTO", "CPU", "GPU.0", "GPU.1", "GPU.2", "AUTO:GPU.0,GPU.1", "AUTO:GPU.0,GPU.1,GPU.2"],
+                    label="Device",
+                    value="",
+                    info="Select the device for model inference"
+                )
+                
+                # Checkboxes for boolean options
+                use_cache = gr.Checkbox(
+                    label="Use Cache",
+                    value=True,
+                    info="Enable cache for stateful models (disable for multi-GPU)"
+                )
+                
+                export_model = gr.Checkbox(
+                    label="Export Model",
+                    value=False,
+                    info="Whether to export the model"
+                )
+         
+                # OpenVINO configuration inputs
+                num_streams = gr.Textbox(
+                    label="Number of Streams",
+                    value="",
+                    placeholder="Leave empty for default",
+                    info="Number of inference streams (optional)"
+                )
+                
+                performance_hint = gr.Dropdown(
+                    choices=["", "LATENCY", "THROUGHPUT", "CUMULATIVE_THROUGHPUT"],
+                    label="Performance Hint",
+                    value="",
+                    info="Select performance optimization strategy"
+                )
+                
+                precision_hint = gr.Dropdown(
+                    choices=["", "auto", "fp32", "fp16", "int8"],
+                    label="Precision Hint",
+                    value="",
+                    info="Select model precision for computation"
+                )
+
+                # Add buttons in a row
+                with gr.Row():
+                    load_button = gr.Button("Load Model")
+                    unload_button = gr.Button("Unload Model")
+                    status_button = gr.Button("Check Status")
+
+                # Add a result area
+                result = gr.JSON(label="Result")
+
+                # Connect the buttons to their respective methods
+                load_button.click(
+                    fn=self.payload_constructor.load_model,
+                    inputs=[
+                        id_model,
+                        device,
+                        use_cache,
+                        export_model,
+                        num_streams,
+                        performance_hint,
+                        precision_hint
+                    ],
+                    outputs=result
+                )
+                
+                unload_button.click(
+                    fn=self.payload_constructor.unload_model,
+                    inputs=None,
+                    outputs=result
+                )
+
+                status_button.click(
+                    fn=self.payload_constructor.status,
+                    inputs=None,
+                    outputs=result
+                )
+
+    def setup_interface(self):
+        with gr.Blocks() as self.demo:
+            with gr.Tabs():
+                self.chat_tab()
+                self.openarc_loader()
+
+    def launch(self):
+        self.demo.launch()
 
 if __name__ == "__main__":
-    demo.launch()
+    app = ChatUI()
+    app.launch()
