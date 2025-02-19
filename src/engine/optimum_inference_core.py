@@ -86,7 +86,7 @@ class Optimum_PerformanceMetrics:
             self.performance_config.output_tokens = output_tokens
             
             # Calculate new tokens
-            self.performance_config.new_tokens = output_tokens - input_tokens
+            self.performance_config.new_tokens = output_tokens
             
         except Exception as e:
             print(f"Error counting tokens: {str(e)}")
