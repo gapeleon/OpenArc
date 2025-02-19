@@ -52,9 +52,9 @@ class Payload_Constructor:
                 data=json.dumps(payload)
             )
             response.raise_for_status()
-            return response.json()
+            return response.json(), f"Model loaded successfully: {response.json()}"
         except requests.exceptions.RequestException as e:
-            return {"error": f"Request failed: {str(e)}"}
+            return {"error": f"Request failed: {str(e)}"}, f"Error loading model: {str(e)}"
 
     def unload_model(self):
         """
@@ -65,9 +65,9 @@ class Payload_Constructor:
                 f"{OPENARC_URL}/model/unload"
             )
             response.raise_for_status()
-            return response.json()
+            return response.json(), f"Model unloaded successfully: {response.json()}"
         except requests.exceptions.RequestException as e:
-            return {"error": f"Request failed: {str(e)}"}
+            return {"error": f"Request failed: {str(e)}"}, f"Error unloading model: {str(e)}"
 
     def generate_text(self, message, history):
         """
@@ -75,17 +75,13 @@ class Payload_Constructor:
         
         Args:
             message (str): The current message from the user
-            history (list): List of previous message pairs
+            history (list): List of previous messages from Gradio
         """
-        # Convert the chat history into the expected conversation format
+        # Convert Gradio history format to the API format
         conversation = []
-        
-        # Add history messages
-        for user_msg, assistant_msg in history:
-            conversation.extend([
-                {"role": "user", "content": user_msg},
-                {"role": "assistant", "content": assistant_msg}
-            ])
+        for item in history:
+            # Each item in history is a message dict with 'role' and 'content'
+            conversation.append(item)
         
         # Add the current message
         conversation.append({"role": "user", "content": message})
@@ -93,11 +89,8 @@ class Payload_Constructor:
         # Construct payload with actual values from generation config
         payload = {
             "conversation": conversation,
-            **self.generation_config  # Spread the actual values
+            **self.generation_config
         }
-        
-        # Remove None values from payload
-        payload = {k: v for k, v in payload.items() if v is not None}
         
         try:
             response = requests.post(
@@ -106,9 +99,16 @@ class Payload_Constructor:
                 data=json.dumps(payload)
             )
             response.raise_for_status()
-            return response.json().get('response', "Error: No response received")
+            response_data = response.json()
+            
+            # Store the performance metrics
+            if 'performance_metrics' in response_data:
+                self.update_performance_metrics(response_data['performance_metrics'])
+            
+            # Return the complete assistant message object
+            return response_data.get('generated_text', {})
         except requests.exceptions.RequestException as e:
-            return f"Error: {str(e)}"
+            return {"role": "assistant", "content": f"Error: {str(e)}"}
 
     def status(self):
         """
@@ -119,9 +119,9 @@ class Payload_Constructor:
                 f"{OPENARC_URL}/status"
             )
             response.raise_for_status()
-            return response.json()
+            return response.json(), f"Server status: {response.json()}"
         except requests.exceptions.RequestException as e:
-            return {"error": f"Request failed: {str(e)}"}
+            return {"error": f"Request failed: {str(e)}"}, f"Error checking server status: {str(e)}"
 
 
 class ChatUI:
@@ -159,118 +159,135 @@ class ChatUI:
         """Update the generation config in the payload constructor with actual values"""
         self.payload_constructor.generation_config[key] = value
 
+    def setup_performance_metrics(self):
+        with gr.Accordion("Performance Metrics", open=True):
+            self.performance_metrics = gr.JSON(
+                label="Latest Generation Metrics",
+                value={
+                    "generation_time": None,
+                    "input_tokens": None,
+                    "output_tokens": None,
+                    "new_tokens": None,
+                    "eval_time": None,
+                    "tokens_per_second": None
+                }
+            )
+
     def chat_tab(self):
         with gr.Tab("Chat"):
             with gr.Row():
                 # Chat interface on the left
                 with gr.Column(scale=3):
                     self.chat_interface = gr.ChatInterface(
-                        fn=self.payload_constructor.generate_text,
+                        fn=lambda msg, history: self.handle_chat_response(msg, history),
                         type="messages",
                     )
                 
                 # Accordions on the right
                 with gr.Column(scale=1):
                     self.setup_generation_config()
-                    
-                    with gr.Accordion("Accordion 2", open=False):
-                        gr.Markdown("This is the content of Accordion 2.")
-                        slider2 = gr.Slider(minimum=0, maximum=100, label="Slider 2")
+                    self.setup_performance_metrics()
+
+    def handle_chat_response(self, msg, history):
+        # Get the response from the model
+        response = self.payload_constructor.generate_text(msg, history)
+        
+        # Update the performance metrics display
+        if hasattr(self.payload_constructor, 'performance_metrics'):
+            self.performance_metrics.value = self.payload_constructor.performance_metrics
+        
+        return response
 
     def openarc_loader(self):
         with gr.Tab("OpenArc Loader"):
-            # Center the content with controlled width
-            with gr.Column(min_width=600):
-                gr.Markdown("""
-                ### Model Configuration
-                Configure basic model loading parameters
-                """)
-                
-                # Text input for model identifier
-                id_model = gr.Textbox(
-                    label="Model Identifier or Path",
-                    placeholder="Enter model identifier or local path",
-                    info="Enter the model's Hugging Face identifier or local path"
-                )
-                
-                # Device selection dropdown
-                device = gr.Dropdown(
-                    choices=["AUTO", "CPU", "GPU.0", "GPU.1", "GPU.2", "AUTO:GPU.0,GPU.1", "AUTO:GPU.0,GPU.1,GPU.2"],
-                    label="Device",
-                    value="",
-                    info="Select the device for model inference"
-                )
-                
-                # Checkboxes for boolean options
-                use_cache = gr.Checkbox(
-                    label="Use Cache",
-                    value=True,
-                    info="Enable cache for stateful models (disable for multi-GPU)"
-                )
-                
-                export_model = gr.Checkbox(
-                    label="Export Model",
-                    value=False,
-                    info="Whether to export the model"
-                )
-         
-                # OpenVINO configuration inputs
-                num_streams = gr.Textbox(
-                    label="Number of Streams",
-                    value="",
-                    placeholder="Leave empty for default",
-                    info="Number of inference streams (optional)"
-                )
-                
-                performance_hint = gr.Dropdown(
-                    choices=["", "LATENCY", "THROUGHPUT", "CUMULATIVE_THROUGHPUT"],
-                    label="Performance Hint",
-                    value="",
-                    info="Select performance optimization strategy"
-                )
-                
-                precision_hint = gr.Dropdown(
-                    choices=["", "auto", "fp32", "fp16", "int8"],
-                    label="Precision Hint",
-                    value="",
-                    info="Select model precision for computation"
-                )
+            with gr.Row():
+                with gr.Column(min_width=500, scale=1):
+                    
+                    id_model = gr.Textbox(
+                        label="Model Identifier or Path",
+                        placeholder="Enter model identifier or local path",
+                        info="Enter the model's Hugging Face identifier or local path"
+                    )
+                    
+                    device = gr.Dropdown(
+                        choices=["AUTO", "CPU", "GPU.0", "GPU.1", "GPU.2", "AUTO:GPU.0,GPU.1", "AUTO:GPU.0,GPU.1,GPU.2"],
+                        label="Device",
+                        value="",
+                        info="Select the device for model inference"
+                    )
+                    
+                    use_cache = gr.Checkbox(
+                        label="Use Cache",
+                        value=True,
+                        info="Enable cache for stateful models (disable for multi-GPU)"
+                    )
+                    
+                    export_model = gr.Checkbox(
+                        label="Export Model",
+                        value=False,
+                        info="Whether to export the model"
+                    )
+             
+                    num_streams = gr.Textbox(
+                        label="Number of Streams",
+                        value="",
+                        placeholder="Leave empty for default",
+                        info="Number of inference streams (optional)"
+                    )
+                    
+                    performance_hint = gr.Dropdown(
+                        choices=["", "LATENCY", "THROUGHPUT", "CUMULATIVE_THROUGHPUT"],
+                        label="Performance Hint",
+                        value="",
+                        info="Select performance optimization strategy"
+                    )
+                    
+                    precision_hint = gr.Dropdown(
+                        choices=["", "auto", "fp32", "fp16", "int8"],
+                        label="Precision Hint",
+                        value="",
+                        info="Select model precision for computation"
+                    )
 
-                # Add buttons in a row
-                with gr.Row():
-                    load_button = gr.Button("Load Model")
-                    unload_button = gr.Button("Unload Model")
-                    status_button = gr.Button("Check Status")
+                    with gr.Row():
+                        load_button = gr.Button("Load Model")
+                        unload_button = gr.Button("Unload Model")
+                        status_button = gr.Button("Check Status")
 
-                # Add a result area
-                result = gr.JSON(label="Result")
+                # Second column (new)
+                with gr.Column(min_width=300, scale=1):
+                    with gr.Accordion("Debug Log", open=True):
+                        debug_log = gr.JSON(
+                            label="Log Output",
+                            value={"message": "Debug information will appear here..."},
+                        )
 
-                # Connect the buttons to their respective methods
-                load_button.click(
-                    fn=self.payload_constructor.load_model,
-                    inputs=[
-                        id_model,
-                        device,
-                        use_cache,
-                        export_model,
-                        num_streams,
-                        performance_hint,
-                        precision_hint
-                    ],
-                    outputs=result
-                )
-                
-                unload_button.click(
-                    fn=self.payload_constructor.unload_model,
-                    inputs=None,
-                    outputs=result
-                )
+            # Connect the buttons to their respective methods
+            load_button.click(
+                fn=self.payload_constructor.load_model,
+                inputs=[
+                    id_model,
+                    device,
+                    use_cache,
+                    export_model,
+                    num_streams,
+                    performance_hint,
+                    precision_hint
+                ],
+                outputs=[debug_log]  # Add debug_log to outputs
+            )
+            
+            unload_button.click(
+                fn=self.payload_constructor.unload_model,
+                inputs=None,
+                outputs=[debug_log]  # Add debug_log to outputs
+            )
 
-                status_button.click(
-                    fn=self.payload_constructor.status,
-                    inputs=None,
-                    outputs=result
-                )
+            status_button.click(
+                fn=self.payload_constructor.status,
+                inputs=None,
+                outputs=[debug_log]  # Add debug_log to outputs
+            )
 
     def setup_interface(self):
         with gr.Blocks() as self.demo:
