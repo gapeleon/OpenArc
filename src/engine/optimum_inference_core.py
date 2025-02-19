@@ -165,7 +165,7 @@ class Optimum_InferenceCore:
         self.tokenizer = AutoTokenizer.from_pretrained(self.load_model_config.id_model)
         print("Tokenizer loaded successfully.")
 
-    async def generate_stream(self, generation_config: OV_GenerationConfig) -> AsyncIterator[str]: # TODO: Something here breaks the chat template but still does streaming
+    async def generate_stream(self, generation_config: OV_GenerationConfig) -> AsyncIterator[str]:
         """
         Asynchronously stream generated text tokens.
         
@@ -181,12 +181,12 @@ class Optimum_InferenceCore:
             input_ids = self.tokenizer.apply_chat_template(
                 generation_config.conversation,
                 tokenize=True,
-                add_generation_prompt=False,
+                add_generation_prompt=True,
                 return_tensors="pt"
             )
 
             # Initialize the streamer with tokenized input
-            streamer = TextIteratorStreamer(self.tokenizer)
+            streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=True, skip_special_tokens=True)
 
             # Create generation kwargs from config
             generation_kwargs = dict(
