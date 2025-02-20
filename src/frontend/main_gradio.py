@@ -47,7 +47,7 @@ class Payload_Constructor:
         
         try:
             response = requests.post(
-                f"{OPENARC_URL}/model/load",
+                f"{OPENARC_URL}/optimum/model/load",
                 headers={"Content-Type": "application/json"},
                 data=json.dumps(payload)
             )
@@ -62,7 +62,7 @@ class Payload_Constructor:
         """
         try:
             response = requests.delete(
-                f"{OPENARC_URL}/model/unload"
+                f"{OPENARC_URL}/optimum/model/unload"
             )
             response.raise_for_status()
             return response.json(), f"Model unloaded successfully: {response.json()}"
@@ -94,7 +94,7 @@ class Payload_Constructor:
         
         try:
             response = requests.post(
-                f"{OPENARC_URL}/generate/text",
+                f"{OPENARC_URL}/optimum/generate",
                 headers={"Content-Type": "application/json"},
                 data=json.dumps(payload)
             )
@@ -116,7 +116,7 @@ class Payload_Constructor:
         """
         try:
             response = requests.get(
-                f"{OPENARC_URL}/status"
+                f"{OPENARC_URL}/optimum/status"
             )
             response.raise_for_status()
             return response.json(), f"Server status: {response.json()}"

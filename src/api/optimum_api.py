@@ -14,7 +14,7 @@ app = FastAPI(title="OpenVINO Inference API")
 # Global state to store model instance
 model_instance: Optional[Optimum_InferenceCore] = None
 
-@app.post("/model/load")
+@app.post("/optimum/model/load")
 async def load_model(load_config: OV_LoadModelConfig, ov_config: OV_Config):
     """Load a model with the specified configuration"""
     global model_instance
@@ -32,7 +32,7 @@ async def load_model(load_config: OV_LoadModelConfig, ov_config: OV_Config):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.delete("/model/unload")
+@app.delete("/optimum/model/unload")
 async def unload_model():
     """Unload the current model"""
     global model_instance
@@ -42,36 +42,30 @@ async def unload_model():
         return {"status": "success", "message": "Model unloaded successfully"}
     return {"status": "success", "message": "No model was loaded"}
 
-@app.post("/generate/text")
+@app.post("/optimum/generate")
 async def generate_text(generation_config: OV_GenerationConfig):
-    """Generate text without streaming"""
+    """Generate text either as a stream or a full response, based on the stream field"""
     global model_instance
     if not model_instance:
         raise HTTPException(status_code=400, detail="No model loaded")
+    
+    # Check if the client requested streaming
+    if generation_config.stream:
+        async def text_stream() -> AsyncIterator[str]:
+            async for token in model_instance.generate_stream(generation_config):
+                yield token
+        return StreamingResponse(text_stream(), media_type="text/event-stream")
+    else:
+        try:
+            generated_text, metrics = model_instance.generate_text(generation_config)
+            return {
+                "generated_text": generated_text,
+                "performance_metrics": metrics
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
-    try:
-        generated_text, metrics = model_instance.generate_text(generation_config)
-        return {
-            "generated_text": generated_text,
-            "performance_metrics": metrics
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/generate/stream")
-async def generate_text_stream(generation_config: OV_GenerationConfig):
-    """Generate a text stream asynchronously"""
-    global model_instance
-    if not model_instance:
-        raise HTTPException(status_code=400, detail="No model loaded")
-
-    async def text_stream() -> AsyncIterator[str]:
-        async for token in model_instance.generate_stream(generation_config):
-            yield token
-
-    return StreamingResponse(text_stream(), media_type="text/event-stream")
-
-@app.get("/status")
+@app.get("/optimum/status")
 async def get_status():
     """Get current model status and performance metrics"""
     global model_instance

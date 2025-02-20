@@ -27,6 +27,8 @@ class OV_LoadModelConfig(BaseModel):
 
 class OV_GenerationConfig(BaseModel):
     conversation: Union[List[Dict[str, str]], List[List[Dict[str, str]]]] = Field(description="A list of dicts with 'role' and 'content' keys, representing the chat history so far")
+    stream: bool = Field(False, description="Whether to stream the generated text")
+    
     # Inference parameters for generation
     max_new_tokens: int = Field(128, description="Maximum number of tokens to generate")
     temperature: float = Field(1.0, description="Sampling temperature")
@@ -164,6 +166,8 @@ class Optimum_InferenceCore:
 
         self.tokenizer = AutoTokenizer.from_pretrained(self.load_model_config.id_model)
         print("Tokenizer loaded successfully.")
+
+    # TODO: add performance metrics to generate_stream so we can track the same metrics in generate_text
 
     async def generate_stream(self, generation_config: OV_GenerationConfig) -> AsyncIterator[str]:
         """
