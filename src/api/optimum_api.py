@@ -1,7 +1,12 @@
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import StreamingResponse
-from typing import Optional, AsyncIterator
+from fastapi.responses import StreamingResponse, JSONResponse
+from typing import Optional, AsyncIterator, List, Dict, Any
+from pydantic import BaseModel, Extra
 from datetime import datetime
+import logging
+import time
+import uuid
+import json
 
 from engine.optimum_inference_core import (
     OV_LoadModelConfig,
@@ -15,6 +20,18 @@ app = FastAPI(title="OpenVINO Inference API")
 # Global state to store model instance
 model_instance: Optional[Optimum_InferenceCore] = None
 
+# OpenAI-compatible request models
+class ChatCompletionRequest(BaseModel):
+    messages: List[Dict[str, str]]
+    model: str = "default"
+    temperature: Optional[float] = 0.7
+    max_tokens: Optional[int] = None
+    stream: Optional[bool] = False
+    stop: Optional[List[str]] = None
+
+    class Config:
+        extra = Extra.ignore
+        
 @app.post("/model/load")
 async def load_model(load_config: OV_LoadModelConfig, ov_config: OV_Config):
     """Load a model with the specified configuration"""
