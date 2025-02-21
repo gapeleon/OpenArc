@@ -24,8 +24,10 @@ def start_server(host: str = "0.0.0.0", port: int = 8000, reload: bool = False):
     logger.info("  - DELETE /model/unload    Unload current model")
     logger.info("  - POST   /generate/text   Generate text synchronously")
     logger.info("  - POST   /generate/stream Stream text generation")
-    logger.info("  - GET    /status         Get model status")
-    logger.info("  - GET    /docs           API documentation")
+    logger.info("  - GET    /status          Get model status")
+    logger.info("  - GET    /docs            API documentation")
+    logger.info("  - POST   /v1/chat         Openai chat completions")
+    logger.info("  - GET    /v1/models       Get model list")
     
     # Start the server
     uvicorn.run(
