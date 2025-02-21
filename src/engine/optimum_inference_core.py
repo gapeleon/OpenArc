@@ -37,7 +37,8 @@ class OV_GenerationConfig(BaseModel):
     
     num_return_sequences: int = Field(1, description="Number of sequences to return")
     pad_token_id: Optional[int] = Field(None, description="Custom pad token ID")
-    eos_token_id: Optional[int] = Field(2, description="Custom end of sequence token ID")
+    eos_token_id: Optional[int] = Field(None, description="Custom end of sequence token ID")
+    
 
 class OV_PerformanceConfig(BaseModel):
     generation_time: Optional[float] = Field(None, description="Generation time in seconds")
@@ -164,6 +165,25 @@ class Optimum_InferenceCore:
 
         self.tokenizer = AutoTokenizer.from_pretrained(self.load_model_config.id_model)
         print("Tokenizer loaded successfully.")
+        
+        # Store default token IDs from the model's generation config
+        self.default_generation_config = self.model.generation_config
+
+        # Fallback to tokenizer if not found in generation config
+        self.default_pad_token_id = (
+            self.default_generation_config.pad_token_id 
+            if hasattr(self.default_generation_config, 'pad_token_id') 
+            else self.tokenizer.pad_token_id
+        )
+
+        self.default_eos_token_id = (
+            self.default_generation_config.eos_token_id 
+            if hasattr(self.default_generation_config, 'eos_token_id') 
+            else self.tokenizer.eos_token_id
+        )
+        
+        print("Generation config:")
+        print(self.default_generation_config)
 
     async def generate_stream(self, generation_config: OV_GenerationConfig) -> AsyncIterator[str]:
         """
@@ -188,6 +208,10 @@ class Optimum_InferenceCore:
             # Initialize the streamer with tokenized input
             streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=True, skip_special_tokens=True)
 
+            # Get token IDs from tokenizer if not provided
+            pad_token_id = generation_config.pad_token_id if generation_config.pad_token_id is not None else self.default_pad_token_id
+            eos_token_id = generation_config.eos_token_id if generation_config.eos_token_id is not None else self.default_eos_token_id
+            
             # Create generation kwargs from config
             generation_kwargs = dict(
                 input_ids=input_ids,
@@ -198,8 +222,8 @@ class Optimum_InferenceCore:
                 do_sample=generation_config.do_sample,
                 repetition_penalty=generation_config.repetition_penalty,
                 num_return_sequences=generation_config.num_return_sequences,
-                pad_token_id=generation_config.pad_token_id,
-                eos_token_id=generation_config.eos_token_id,
+                pad_token_id=pad_token_id,
+                eos_token_id=eos_token_id,
                 streamer=streamer,
             )
 
@@ -248,7 +272,10 @@ class Optimum_InferenceCore:
                 return_tensors="pt"
             )
 
-            # Create generation kwargs from config
+            # Get token IDs from tokenizer if not provided
+            pad_token_id = generation_config.pad_token_id if generation_config.pad_token_id is not None else self.default_pad_token_id
+            eos_token_id = generation_config.eos_token_id if generation_config.eos_token_id is not None else self.default_eos_token_id
+
             generation_kwargs = dict(
                 input_ids=input_ids,
                 max_new_tokens=generation_config.max_new_tokens,
@@ -258,8 +285,8 @@ class Optimum_InferenceCore:
                 do_sample=generation_config.do_sample,
                 repetition_penalty=generation_config.repetition_penalty,
                 num_return_sequences=generation_config.num_return_sequences,
-                pad_token_id=generation_config.pad_token_id,
-                eos_token_id=generation_config.eos_token_id,
+                pad_token_id=pad_token_id,
+                eos_token_id=eos_token_id,
             )
 
             # Generate outpus from the model
