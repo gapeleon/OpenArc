@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from typing import Optional, AsyncIterator
 
-from engine.optimum_inference_core import (
+from engine.optimum.optimum_inference_core import (
     OV_LoadModelConfig,
     OV_Config,
     OV_GenerationConfig,

@@ -22,8 +22,6 @@ def start_server(host: str = "0.0.0.0", port: int = 8000, reload: bool = False):
     logger.info("Available endpoints:")
     logger.info("  - POST   /model/load      Load a model")
     logger.info("  - DELETE /model/unload    Unload current model")
-    logger.info("  - POST   /generate/text   Generate text synchronously")
-    logger.info("  - POST   /generate/stream Stream text generation")
     logger.info("  - GET    /status         Get model status")
     logger.info("  - GET    /docs           API documentation")
     

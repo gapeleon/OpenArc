@@ -10,10 +10,10 @@ Under the hood it's a strongly typed fastAPI implementation of [OVModelForCausal
 Here are some features:
 
 - **Strongly typed API with four endpoints**
-	- /model/load: loads model and accepts ov_config
-	- /model/unload: use gc to purge a loaded model from device memory
-	- /generate/text: synchronous execution,  select sampling parameters, token limits : also returns a performance report
-	- /status: see the loaded model 
+	- optimum/model/load: loads model and accepts ov_config
+	- optimum/model/unload: use gc to purge a loaded model from device memory
+	- optimum/generate: synchronous execution,  select sampling parameters, token limits : also returns a performance report when stream is false
+	- optimum/status: see the loaded model 
 - Each endpoint has a pydantic model keeping exposed parameters easy to maintain or extend.
 - Native chat templating
 
@@ -49,9 +49,9 @@ Then create the conda environment
 
 ## Workflow
 
-- Either download or convert an LLM
-- Use the /model/load endpoint
-- Use the /generate/text endpoint for inference
+- Either download or convert an LLM to OpenVINO IR
+- Use the /optimum/model/load endpoint
+- Use the /optimum/generate endpoint for inference
 - Manage the conversation dictionary in code somewhere else. 
 
 ### Convert to [OpenVINO IR](https://docs.openvino.ai/2025/documentation/openvino-ir-format.html)
@@ -82,11 +82,11 @@ NOTE: The optimum CLI tool integrates several different APIs from several differ
 
 ## Known Issues
 
-- Right now the /generate/text endpoint can return the whole conversation dict. 
+- Streaming does not return performance metrics
 
 ## Roadmap
 
-- Define a pyprojectoml o
+- Define a pyprojectoml 
 - More documentation about how to use the various openvino parameters like ENABLE_HYPERTHREADING and INFERENCE_NUM_THREADS for CPU only which are not included in this release yet.
 
 
