@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from typing import Optional, AsyncIterator
+from datetime import datetime
 
 from engine.optimum_inference_core import (
     OV_LoadModelConfig,
@@ -86,4 +87,24 @@ async def get_status():
         "status": "loaded",
         "id_model": model_instance.load_model_config.id_model,
         "device": model_instance.load_model_config.device
+    }
+
+@app.get("/v1/models")
+async def get_models():
+    """Get list of available models in openai format"""
+    global model_instance
+    data = []
+    
+    if model_instance:
+        model_data = {
+            "id": model_instance.load_model_config.id_model,
+            "object": "model",
+            "created": int(datetime.utcnow().timestamp()),
+            "owned_by": "OpenArc",  # Our platform identifier a placeholder
+        }
+        data.append(model_data)
+    
+    return {
+        "object": "list",
+        "data": data
     }
