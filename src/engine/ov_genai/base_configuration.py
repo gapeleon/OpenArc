@@ -6,7 +6,7 @@ from typing import Optional
 
 
 # I'm stilling working through how to build an API from this. Many other classes inherit from this 
-# so pydantic models must be carefully designed to make API
+# so pydantic models must be carefully designed to make API useful for other types of models.
 
 
 class OV_GenAI_GenerationConfig(BaseModel):
