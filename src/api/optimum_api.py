@@ -109,11 +109,10 @@ async def get_status():
 ########################################################
 # The first implementation of the OpenAI-like API was contributed by @gapeleon.
 # They are one hero among many future heroes working to make OpenArc better. 
-# However, here, in the annals of this codebase, this credit shall remain.
+
 
 # OpenAI-like API Endpoints for using with different frontends
 # These require other features to be implemented like performance tracking,etc
-# For example
 
 
 @app.get("/v1/models")

@@ -10,7 +10,7 @@ class Payload_Constructor:
     def __init__(self):
         self.generation_config = {}  # This will store actual values, not components
 
-    def load_model(self, id_model, device, use_cache, export_model, num_streams, performance_hint, precision_hint):
+    def load_model(self, id_model, device, use_cache, export_model, num_streams, performance_hint, precision_hint, bos_token_id, eos_token_id, pad_token_id, enable_hyperthreading, inference_num_threads):
         """
         Constructs and sends the load model request based on UI inputs
         
@@ -22,6 +22,11 @@ class Payload_Constructor:
             num_streams (str): Number of inference streams
             performance_hint (str): Performance optimization strategy
             precision_hint (str): Model precision for computation
+            bos_token_id (str): BOS token ID
+            eos_token_id (str): EOS token ID
+            pad_token_id (str): PAD token ID
+            enable_hyperthreading (bool): Whether to enable hyperthreading
+            inference_num_threads (str): Number of inference threads
         """
 
         # Construct the payload matching the API format
@@ -30,12 +35,17 @@ class Payload_Constructor:
                 "id_model": id_model,
                 "use_cache": use_cache,
                 "device": device,
-                "export_model": export_model
+                "export_model": export_model,
+                "eos_token_id": eos_token_id,
+                "pad_token_id": pad_token_id,
+                "bos_token_id": bos_token_id
             },
             "ov_config": {
                 "NUM_STREAMS": num_streams,
                 "PERFORMANCE_HINT": performance_hint,
       #         "PRECISION_HINT": precision_hint
+                "ENABLE_HYPERTHREADING": enable_hyperthreading,
+                "INFERENCE_NUM_THREADS": inference_num_threads  
             }
         }
 
@@ -144,8 +154,7 @@ class ChatUI:
                 'repetition_penalty': gr.Slider(minimum=0, maximum=100, label="Repetition penalty"),
                 'do_sample': gr.Checkbox(label="Do sample"),
                 'num_return_sequences': gr.Slider(minimum=0, maximum=100, label="Number of sequences to return"),
-                'pad_token_id': gr.Slider(minimum=0, maximum=100, label="pad token ID"),
-                'eos_token_id': gr.Slider(minimum=0, maximum=100, label="eos token ID")
+           
             })
             
             # Set up event handlers to update the payload constructor when values change
@@ -248,6 +257,38 @@ class ChatUI:
                         value="",
                         info="Select model precision for computation"
                     )
+
+                    bos_token_id = gr.Textbox(
+                        label="BOS Token ID",
+                        value="",
+                        info="Enter the BOS token ID"
+                    )
+                    
+                    eos_token_id = gr.Textbox(
+                        label="EOS Token ID",
+                        value="",
+                        info="Enter the EOS token ID"
+                    )
+                    
+                    pad_token_id = gr.Textbox(
+                        label="PAD Token ID",
+                        value="",
+                        info="Enter the PAD token ID"
+                    )
+
+                    enable_hyperthreading = gr.Checkbox(
+                        label="Enable Hyperthreading",
+                        value=True,
+                        info="Enable hyperthreading for CPU inference"
+                    )
+
+                    inference_num_threads = gr.Textbox(
+                        label="Inference Number of Threads",
+                        value="",
+                        placeholder="Leave empty for default",
+                        info="Number of inference threads (optional)"
+                    )
+                    
 
                     with gr.Row():
                         load_button = gr.Button("Load Model")

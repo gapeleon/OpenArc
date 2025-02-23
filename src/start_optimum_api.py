@@ -25,6 +25,7 @@ def start_server(host: str = "0.0.0.0", port: int = 8000, reload: bool = False):
     logger.info("  - GET    /status         Get model status")
     logger.info("  - GET    /docs           API documentation")
     
+    
     # Start the server
     uvicorn.run(
         "api.optimum_api:app",
