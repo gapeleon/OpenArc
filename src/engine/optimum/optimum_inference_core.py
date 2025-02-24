@@ -31,6 +31,7 @@ class OV_LoadModelConfig(BaseModel):
     use_cache: bool = Field(True, description="Whether to use cache for stateful models. For multi-gpu use false.")
     device: str = Field("CPU", description="Device options: CPU, GPU, AUTO")
     export_model: bool = Field(False, description="Whether to export the model")
+    dynamic_shapes: Optional[bool] = Field(True, description="Whether to use dynamic shapes")
     pad_token_id: Optional[int] = Field(None, description="Custom pad token ID")
     eos_token_id: Optional[int] = Field(None, description="Custom end of sequence token ID")
     bos_token_id: Optional[int] = Field(None, description="Custom beginning of sequence token ID")
@@ -167,6 +168,7 @@ class Optimum_InferenceCore:
             device=self.load_model_config.device,
             export_model=self.load_model_config.export_model,
             ov_config=ov_config_dict,
+            dynamic_shapes=self.load_model_config.dynamic_shapes,
             use_cache=self.load_model_config.use_cache,
             pad_token_id=self.load_model_config.pad_token_id,
             eos_token_id=self.load_model_config.eos_token_id,
