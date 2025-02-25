@@ -214,86 +214,97 @@ class Optimum_Loader:
 
     def load_model_interface(self):
         with gr.Column(min_width=500, scale=1):
-            self.components.update({
-                'id_model': gr.Textbox(
-                    label="Model Identifier or Path",
-                    placeholder="Enter model identifier or local path",
-                    info="Enter the model's Hugging Face identifier or local path"
-                ),
-                'device': gr.Dropdown(
-                    choices=["AUTO", "CPU", "GPU.0", "GPU.1", "GPU.2", "AUTO:GPU.0,GPU.1", "AUTO:GPU.0,GPU.1,GPU.2"],
-                    label="Device",
-                    value="",
-                    info="Select the device for model inference"
-                ),
-                'use_cache': gr.Checkbox(
-                    label="Use Cache",
-                    value=True,
-                    info="Enable cache for stateful models (disable for multi-GPU)"
-                ),
-                'export_model': gr.Checkbox(
-                    label="Export Model",
-                    value=False,
-                    info="Whether to export the model to int8_asym. Default and not reccomended."
-                ),
+            # Model Basic Configuration
+            with gr.Group("Model Configuration"):
+                self.components.update({
+                    'id_model': gr.Textbox(
+                        label="Model Identifier or Path",
+                        placeholder="Enter model identifier or local path",
+                        info="Enter the model's Hugging Face identifier or local path"
+                    ),
+                    'device': gr.Dropdown(
+                        choices=["", "AUTO", "CPU", "GPU.0", "GPU.1", "GPU.2", "AUTO:GPU.0,GPU.1", "AUTO:GPU.0,GPU.1,GPU.2"],
+                        label="Device",
+                        value="",
+                        info="Select the device for model inference"
+                    ),
+                    'use_cache': gr.Checkbox(
+                        label="Use Cache",
+                        value=True,
+                        info="Enable cache for stateful models (disable for multi-GPU)"
+                    ),
+                    'export_model': gr.Checkbox(
+                        label="Export Model",
+                        value=False,
+                        info="Whether to export the model to int8_asym. Default and not recommended."
+                    ),
+                    'dynamic_shapes': gr.Checkbox(
+                        label="Dynamic Shapes",
+                        value=True,
+                        info="Whether to use dynamic shapes. Default is True. Should only be disabled for NPU inference."
+                    )
+                })
 
-                'dynamic_shapes': gr.Checkbox(
-                    label="Dynamic Shapes",
-                    value=True,
-                    info="Whether to use dynamic shapes. Default is True. Should only be disabled for NPU inference."
-                ),  
+            # Token Configuration
+            with gr.Group("Token Settings"):
+                self.components.update({
+                    'bos_token_id': gr.Textbox(
+                        label="BOS Token ID",
+                        value="",
+                        info="Enter the BOS token ID"
+                    ),
+                    'eos_token_id': gr.Textbox(
+                        label="EOS Token ID",
+                        value="",
+                        info="Enter the EOS token ID"
+                    ),
+                    'pad_token_id': gr.Textbox(
+                        label="PAD Token ID",
+                        value="",
+                        info="Enter the PAD token ID"
+                    )
+                })
 
-                'bos_token_id': gr.Textbox(
-                    label="bos_token_id",
-                    value="",
-                    info="Enter the BOS token ID"
-                ),
-                'eos_token_id': gr.Textbox(
-                    label="eos_token_id",
-                    value="",
-                    info="Enter the EOS token ID"
-                ),
-                'pad_token_id': gr.Textbox(
-                    label="pad_token_id",
-                    value="",
-                    info="Enter the PAD token ID"
-                ),
-                'num_streams': gr.Textbox(
-                    label="Number of Streams",
-                    value="",
-                    placeholder="Leave empty for default",
-                    info="Number of inference streams (optional)"
-                ),
-                'performance_hint': gr.Dropdown(
-                    choices=["", "LATENCY", "THROUGHPUT", "CUMULATIVE_THROUGHPUT"],
-                    label="Performance Hint",
-                    value="",
-                    info="Select performance optimization strategy"
-                ),
-                'precision_hint': gr.Dropdown(
-                    choices=["", "auto", "fp32", "fp16", "int8"],
-                    label="Precision Hint",
-                    value="",
-                    info="Select model precision for computation"
-                ),
-                'enable_hyperthreading': gr.Checkbox(
-                    label="Enable Hyperthreading",
-                    value=True,
-                    info="Enable hyperthreading for CPU inference"
-                ),
-                'inference_num_threads': gr.Textbox(
-                    label="Inference Number of Threads",
-                    value="",
-                    placeholder="Leave empty for default",
-                    info="Number of inference threads (optional)"
-                )
-            })
+            # Performance Optimization
+            with gr.Group("Performance Settings"):
+                self.components.update({
+                    'num_streams': gr.Textbox(
+                        label="Number of Streams",
+                        value="",
+                        placeholder="Leave empty for default",
+                        info="Number of inference streams (optional)"
+                    ),
+                    'performance_hint': gr.Dropdown(
+                        choices=["", "LATENCY", "THROUGHPUT", "CUMULATIVE_THROUGHPUT"],
+                        label="Performance Hint",
+                        value="",
+                        info="Select performance optimization strategy"
+                    ),
+                    'precision_hint': gr.Dropdown(
+                        choices=["", "auto", "fp16", "fp32", "int8"],
+                        label="Precision Hint",
+                        value="",
+                        info="Select model precision for computation"
+                    ),
+                    'enable_hyperthreading': gr.Checkbox(
+                        label="Enable Hyperthreading",
+                        value=True,
+                        info="Enable hyperthreading for CPU inference"
+                    ),
+                    'inference_num_threads': gr.Textbox(
+                        label="Inference Number of Threads",
+                        value="",
+                        placeholder="Leave empty for default",
+                        info="Number of inference threads (optional)"
+                    )
+                })
 
+            # Action Buttons
             with gr.Row():
                 self.components.update({
-                    'load_button': gr.Button("Load Model"),
-                    'unload_button': gr.Button("Unload Model"),
-                    'status_button': gr.Button("Check Status")
+                    'load_button': gr.Button("Load Model", variant="primary"),
+                    'unload_button': gr.Button("Unload Model", variant="secondary"),
+                    'status_button': gr.Button("Check Status", variant="secondary")
                 })
 
     def debug_tool(self):
@@ -362,7 +373,7 @@ class Optimum_Loader:
                     'id_model', 'device', 'use_cache', 'export_model',
                     'num_streams', 'performance_hint', 'precision_hint',
                     'bos_token_id', 'eos_token_id', 'pad_token_id',
-                    'enable_hyperthreading', 'inference_num_threads'
+                    'enable_hyperthreading', 'inference_num_threads', 'dynamic_shapes'
                 ]
             ],
             outputs=[self.components['debug_log']]
